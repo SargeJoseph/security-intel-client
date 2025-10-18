@@ -152,6 +152,21 @@ class VTDatabase:
             )
         ''')
 
+        # VT scan runs tracking - Track each execution with vendor changes
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS vt_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TIMESTAMP,
+                scan_type TEXT,
+                files_processed INTEGER DEFAULT 0,
+                new_scans INTEGER DEFAULT 0,
+                malicious_count INTEGER DEFAULT 0,
+                clean_count INTEGER DEFAULT 0,
+                excluded_vendors_added TEXT,
+                excluded_vendors_removed TEXT
+            )
+        ''')
+
         self.conn.commit()
 
     def get_upload_count_today(self) -> int:
@@ -200,6 +215,41 @@ class VTDatabase:
         ''', (action_type, now, 1 if success else 0))
 
         self.conn.commit()
+
+    def track_vt_run(self, scan_type: str, files_processed: int = 0, new_scans: int = 0,
+                     malicious_count: int = 0, clean_count: int = 0,
+                     excluded_vendors_added: Optional[List[str]] = None,
+                     excluded_vendors_removed: Optional[List[str]] = None):
+        """Track a VT scan run execution
+
+        Args:
+            scan_type: Type of scan (e.g., 'single_file', 'multiple_from_list', 'file_hash', 'FAC')
+            files_processed: Total number of files processed
+            new_scans: Number of new scans performed
+            malicious_count: Number of malicious files detected
+            clean_count: Number of clean files detected
+            excluded_vendors_added: List of vendor names added to exclusion list
+            excluded_vendors_removed: List of vendor names removed from exclusion list
+        """
+        cursor = self.conn.cursor()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Convert lists to comma-separated strings for storage
+        added_str = ', '.join(excluded_vendors_added) if excluded_vendors_added else None
+        removed_str = ', '.join(excluded_vendors_removed) if excluded_vendors_removed else None
+
+        cursor.execute('''
+            INSERT INTO vt_runs
+            (timestamp, scan_type, files_processed, new_scans, malicious_count,
+             clean_count, excluded_vendors_added, excluded_vendors_removed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (now, scan_type, files_processed, new_scans, malicious_count,
+              clean_count, added_str, removed_str))
+
+        self.conn.commit()
+
+        # Return the ID of the inserted run for reference
+        return cursor.lastrowid
     def safe_update_hash(self, sha256: str, data: Dict, max_retries: int = 3) -> bool:
         """
         Safely update hash data with retry logic - FULLY PROTECTED
@@ -640,7 +690,7 @@ class VTDatabase:
             else:
                 should_include.append(vendor_name)
 
-        # Read current constants.py
+        # Read current constants.py and extract existing excluded vendors
         constants_path = Path(__file__).parent / "constants.py"
         try:
             with open(constants_path, 'r', encoding='utf-8') as f:
@@ -648,6 +698,34 @@ class VTDatabase:
         except Exception as e:
             console.print(f"[red]Error reading constants.py: {e}[/red]")
             return False
+
+        # Parse existing EXCLUDED_VENDORS to detect changes
+        existing_excluded = set()
+        in_excluded_vendors = False
+        for line in lines:
+            if line.strip().startswith('EXCLUDED_VENDORS = ['):
+                in_excluded_vendors = True
+                continue
+            elif in_excluded_vendors:
+                if ']' in line:
+                    break
+                # Extract vendor name from line like '    "VendorName",'
+                stripped = line.strip().strip(',').strip('"').strip("'")
+                if stripped:
+                    existing_excluded.add(stripped)
+
+        # Calculate changes
+        new_excluded_set = set(should_exclude)
+        added_vendors = sorted(new_excluded_set - existing_excluded)
+        removed_vendors = sorted(existing_excluded - new_excluded_set)
+
+        # Track vendor exclusion changes in vt_runs table
+        if added_vendors or removed_vendors:
+            self.track_vt_run(
+                scan_type='vendor_exclusion_update',
+                excluded_vendors_added=added_vendors if added_vendors else None,
+                excluded_vendors_removed=removed_vendors if removed_vendors else None
+            )
 
         # Find and update EXCLUDED_VENDORS list
         new_lines = []
@@ -660,7 +738,7 @@ class VTDatabase:
                 in_excluded_vendors = True
                 updated = True
 
-                # Write new list
+                # Write new list with simple comment (details are in vt_runs table)
                 new_lines.append('# Excluded vendors (auto-updated based on <70% reliability score)\n')
                 new_lines.append('EXCLUDED_VENDORS = [\n')
 
@@ -770,6 +848,24 @@ class VTDatabase:
         self.conn.commit()
         console.print(f"[green]✓ Re-evaluated {updated_count} file(s) affected by vendor exclusion changes[/green]")
 
+    def get_recent_vt_runs(self, limit: int = 10) -> List[Dict]:
+        """Get recent VT scan runs
+
+        Args:
+            limit: Maximum number of runs to return (default: 10)
+
+        Returns:
+            List of dictionaries containing run information
+        """
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT * FROM vt_runs
+            ORDER BY timestamp DESC
+            LIMIT ?
+        ''', (limit,))
+
+        return [dict(row) for row in cursor.fetchall()]
+
     def get_stats(self) -> Dict:
         """Get database statistics"""
         cursor = self.conn.cursor()
@@ -792,6 +888,10 @@ class VTDatabase:
 
         uploads_today = self.get_upload_count_today()
 
+        # VT runs statistics
+        cursor.execute('SELECT COUNT(*) FROM vt_runs')
+        total_runs = cursor.fetchone()[0]
+
         return {
             'total_hashes': total_hashes,
             'malicious_hashes': malicious,
@@ -799,5 +899,6 @@ class VTDatabase:
             'total_vendors': total_vendors,
             'total_uploads': total_uploads,
             'uploads_today': uploads_today,
-            'uploads_remaining': VT_UPLOAD_DAILY_LIMIT - uploads_today
+            'uploads_remaining': VT_UPLOAD_DAILY_LIMIT - uploads_today,
+            'total_runs': total_runs
         }
