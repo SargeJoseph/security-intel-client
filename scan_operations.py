@@ -102,22 +102,25 @@ def single_ip_scan(db, threat_intel):
 
     try:
         # 1. URLHAUS ANALYSIS
-        if (not intel.get('urlhaus_checked') or
-            intel.get('urlhaus_status') == 'error' or
-            (intel.get('urlhaus_checked') and
-             datetime.fromisoformat(intel['urlhaus_checked']) <
-             datetime.now() - timedelta(days=URLHAUS_CACHE_DAYS))):
+        if (hasattr(threat_intel, 'urlhaus_key') and threat_intel.urlhaus_key):
+            if (not intel.get('urlhaus_checked') or
+                intel.get('urlhaus_status') == 'error' or
+                (intel.get('urlhaus_checked') and
+                 datetime.fromisoformat(intel['urlhaus_checked']) <
+                 datetime.now() - timedelta(days=URLHAUS_CACHE_DAYS))):
 
-            console.print("[dim]🔍 Checking URLhaus...[/dim]")
-            urlhaus_data = threat_intel.lookup_urlhaus(ip, threat_intel.urlhaus_key)
-            intel['urlhaus_status'] = urlhaus_data['status']
-            intel['urlhaus_details'] = urlhaus_data['details']
-            intel['urlhaus_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            updates_made = True
-            time.sleep(URLHAUS_DELAY)
+                console.print("[dim]🔍 Checking URLhaus...[/dim]")
+                urlhaus_data = threat_intel.lookup_urlhaus(ip, threat_intel.urlhaus_key)
+                intel['urlhaus_status'] = urlhaus_data['status']
+                intel['urlhaus_details'] = urlhaus_data['details']
+                intel['urlhaus_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                updates_made = True
+                time.sleep(URLHAUS_DELAY)
 
-            if urlhaus_data['status'] == 'malicious':
-                console.print("[red]⚠ MALICIOUS activity detected by URLhaus[/red]")
+                if urlhaus_data['status'] == 'malicious':
+                    console.print("[red]⚠ MALICIOUS activity detected by URLhaus[/red]")
+        else:
+            console.print("[dim]🔍 URLhaus not configured[/dim]")
 
         # 2. ABUSEIPDB ANALYSIS
         if (hasattr(threat_intel, 'abuseipdb_key') and
@@ -125,6 +128,7 @@ def single_ip_scan(db, threat_intel):
             hasattr(threat_intel, 'lookup_abuseipdb')):
 
             if (not intel.get('abuseipdb_checked') or
+                intel.get('abuseipdb_confidence_score') is None or
                 (intel.get('abuseipdb_checked') and
                  datetime.fromisoformat(intel['abuseipdb_checked']) <
                  datetime.now() - timedelta(days=ABUSEIPDB_CACHE_DAYS))):
@@ -147,6 +151,10 @@ def single_ip_scan(db, threat_intel):
                     if abuseipdb_data.get('country'):
                         intel['country'] = abuseipdb_data.get('country')
                 else:
+                    # Store 0 to prevent NoneType comparison errors
+                    intel['abuseipdb_confidence_score'] = 0
+                    intel['abuseipdb_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    updates_made = True
                     console.print("[yellow]⚠ AbuseIPDB lookup failed or no data[/yellow]")
 
                 time.sleep(ABUSEIPDB_DELAY)
@@ -391,22 +399,24 @@ def _analyze_ips(db, threat_intel, ips: List[str], scanned_ips: List[str]):
                 updates_made = False
 
                 # Check if URLhaus lookup is needed
-                if not intel.get('urlhaus_checked') or \
-                   intel.get('urlhaus_status') == 'error' or \
-                   (intel.get('urlhaus_checked') and
-                    datetime.fromisoformat(intel['urlhaus_checked']) <
-                    datetime.now() - timedelta(days=URLHAUS_CACHE_DAYS)):
+                if hasattr(threat_intel, 'urlhaus_key') and threat_intel.urlhaus_key:
+                    if not intel.get('urlhaus_checked') or \
+                       intel.get('urlhaus_status') == 'error' or \
+                       (intel.get('urlhaus_checked') and
+                        datetime.fromisoformat(intel['urlhaus_checked']) <
+                        datetime.now() - timedelta(days=URLHAUS_CACHE_DAYS)):
 
-                    urlhaus_data = threat_intel.lookup_urlhaus(ip)
-                    intel['urlhaus_status'] = urlhaus_data['status']
-                    intel['urlhaus_details'] = urlhaus_data['details']
-                    intel['urlhaus_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    updates_made = True
-                    time.sleep(URLHAUS_DELAY)
+                        urlhaus_data = threat_intel.lookup_urlhaus(ip, threat_intel.urlhaus_key)
+                        intel['urlhaus_status'] = urlhaus_data['status']
+                        intel['urlhaus_details'] = urlhaus_data['details']
+                        intel['urlhaus_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        updates_made = True
+                        time.sleep(URLHAUS_DELAY)
 
                 # AbuseIPDB lookup - using URLhaus key for now
                 if hasattr(threat_intel, 'abuseipdb_key') and threat_intel.abuseipdb_key and hasattr(threat_intel, 'lookup_abuseipdb'):
                     if (not intel.get('abuseipdb_checked') or
+                        intel.get('abuseipdb_confidence_score') is None or
                         (intel.get('abuseipdb_checked') and
                          datetime.fromisoformat(intel['abuseipdb_checked']) <
                          datetime.now() - timedelta(days=ABUSEIPDB_CACHE_DAYS))):
@@ -422,6 +432,11 @@ def _analyze_ips(db, threat_intel, ips: List[str], scanned_ips: List[str]):
                                 intel['usage_type'] = abuseipdb_data.get('usage_type')
                             if abuseipdb_data.get('domain'):
                                 intel['domain'] = abuseipdb_data.get('domain')
+                            updates_made = True
+                        else:
+                            # Store 0 to prevent NoneType comparison errors
+                            intel['abuseipdb_confidence_score'] = 0
+                            intel['abuseipdb_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             updates_made = True
 
                         time.sleep(ABUSEIPDB_DELAY)

@@ -120,7 +120,7 @@ class ThreatIntelligence:
                     return {'status': 'unknown', 'details': None}
             else:
                 self.db.log_api_usage('urlhaus', False)
-                return {'status': 'clean', 'details': None}
+                return {'status': 'error', 'details': None}
 
         except Exception as e:
             console.print(f"[yellow]URLhaus lookup failed for {ip}: {e}[/yellow]")
