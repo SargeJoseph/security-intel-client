@@ -339,7 +339,7 @@ class Database:
                 test_conn.commit()
                 test_conn.close()
 
-                console.print("[green]✓ Database is available for read/write operations[/green]")
+                console.print("[green]OK: Database is available for read/write operations[/green]")
                 return True
 
             except sqlite3.OperationalError as e:
@@ -348,7 +348,7 @@ class Database:
                 # Only show the message again if the error changed
                 if current_error != last_error:
                     if "locked" in current_error.lower():
-                        console.print("\n[red]❌ DATABASE IS LOCKED BY EXTERNAL APPLICATIONS[/red]")
+                        console.print("\n[red]ERROR: DATABASE IS LOCKED BY EXTERNAL APPLICATIONS[/red]")
                         console.print("[yellow]Please CLOSE THESE APPLICATIONS COMPLETELY:[/yellow]")
                         console.print("  • DB Browser for SQLite")
                         console.print("  • Valentina Studio")
@@ -357,7 +357,7 @@ class Database:
                         console.print(f"\n[dim]Database file: {self.db_path}[/dim]")
                         console.print("\n[yellow]Close all database browsers, then press Enter to check again...[/yellow]")
                     elif "unable to open" in current_error.lower():
-                        console.print("\n[red]❌ Cannot open database file[/red]")
+                        console.print("\n[red]ERROR: Cannot open database file[/red]")
                         console.print("[yellow]The database file might be in use or permissions issue[/yellow]")
                         console.print(f"[dim]File: {self.db_path}[/dim]")
                         console.print("[yellow]Press Enter to retry...[/yellow]")

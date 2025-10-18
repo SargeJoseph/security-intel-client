@@ -61,7 +61,7 @@ class VTScanner:
                         shell=False
                     )
                     if result.returncode == 0:
-                        console.print(f"[green]✓ VT CLI validated: {result.stdout.strip()}[/green]")
+                        console.print(f"[green]OK: VT CLI validated: {result.stdout.strip()}[/green]")
                         return
                     else:
                         console.print(f"[yellow]Warning: VT CLI at {vt_path} failed validation, searching system paths...[/yellow]")
@@ -189,7 +189,7 @@ class VTScanner:
                     output = result.stdout.strip()
 
                     if 'vt' in output.lower() or 'virustotal' in output.lower():
-                        console.print(f"[green]✓ VT CLI validated at: {cli_path}[/green]")
+                        console.print(f"[green]OK: VT CLI validated at: {cli_path}[/green]")
                         version_match = output.split()[0] if output else 'unknown'
                         console.print(f"[green]Version: {version_match}[/green]")
 
@@ -234,7 +234,7 @@ class VTScanner:
 
     def upload_file(self, file_path: str, sha256: Optional[str] = None) -> Optional[Dict]:
         """Upload a file to VirusTotal"""
-        console.print(f"🔍 [DEBUG] upload_file START: {Path(file_path).name}")
+        console.print(f"[DEBUG] upload_file START: {Path(file_path).name}")
 
         # Check if VT CLI is available
         if not self.vt_cli_path:
@@ -367,7 +367,7 @@ class VTScanner:
         try:
             # Calculate SHA256
             sha256 = self.calculate_hash(file_path)
-            console.print(f"🔍 [DEBUG] Calculated hash: {sha256}")
+            console.print(f"[DEBUG] Calculated hash: {sha256}")
             if not sha256:
                 return None
 
@@ -392,14 +392,14 @@ class VTScanner:
 
             # Scan with VT
             result = self.scan_hash(sha256)
-            console.print(f"🔍 [DEBUG] scan_hash returned: {result}")
+            console.print(f"[DEBUG] scan_hash returned: {result}")
 
             # FIXED: Handle the case where scan_hash returns None (error)
             if result is None:
                 console.print("[red]Scan failed - VT returned error[/red]")
                 # Even on scan failure, we might want to offer upload
                 if allow_upload or Confirm.ask("Scan failed. Upload to VirusTotal for analysis?"):
-                    console.print(f"🔍 [DEBUG] UPLOAD TRIGGERED after scan failure!")
+                    console.print(f"[DEBUG] UPLOAD TRIGGERED after scan failure!")
                     upload_result = self.upload_file(file_path, sha256)
                     if upload_result:
                         result = upload_result
@@ -409,18 +409,18 @@ class VTScanner:
             # FIXED: Handle 'not_found' status
             elif result.get('status') == 'not_found':
                 console.print(f"[yellow]File not in VT database[/yellow]")
-                console.print(f"🔍 [DEBUG] allow_upload = {allow_upload}")
+                console.print(f"[DEBUG] allow_upload = {allow_upload}")
                 if allow_upload or Confirm.ask("Upload to VirusTotal for analysis?"):
-                    console.print(f"🔍 [DEBUG] UPLOAD TRIGGERED! Condition evaluated to TRUE")
+                    console.print(f"[DEBUG] UPLOAD TRIGGERED! Condition evaluated to TRUE")
                     upload_result = self.upload_file(file_path, sha256)
-                    console.print(f"🔍 [DEBUG] upload_file returned: {upload_result}")
+                    console.print(f"[DEBUG] upload_file returned: {upload_result}")
                     if upload_result:
                         result = upload_result
-                        console.print(f"🔍 [DEBUG] Upload successful, new result: {result}")
+                        console.print(f"[DEBUG] Upload successful, new result: {result}")
                     else:
-                        console.print(f"🔍 [DEBUG] Upload failed or returned None")
+                        console.print(f"[DEBUG] Upload failed or returned None")
                 else:
-                    console.print(f"🔍 [DEBUG] UPLOAD NOT TRIGGERED! Condition evaluated to FALSE")
+                    console.print(f"[DEBUG] UPLOAD NOT TRIGGERED! Condition evaluated to FALSE")
                     # Explicitly return a 'not_found_skipped' status
                     return {'status': 'not_found_skipped', 'sha256': sha256}
 
@@ -523,7 +523,7 @@ class VTScanner:
 
     def scan_multiple_files(self, file_paths: List[str], allow_upload: bool = False) -> Dict:
         """Scan multiple files with progress tracking and upload support"""
-        console.print(f"🔍 [DEBUG] scan_multiple_files called with {len(file_paths)} files, allow_upload={allow_upload}")
+        console.print(f"[DEBUG] scan_multiple_files called with {len(file_paths)} files, allow_upload={allow_upload}")
 
         results = {
             'total': len(file_paths),
@@ -561,12 +561,12 @@ class VTScanner:
                     details=f"{filename} ({i+1}/{len(file_paths)})"
                 )
 
-                console.print(f"🔍 [DEBUG] Scanning file {i+1}/{len(file_paths)}: {filename}")
-                console.print(f"🔍 [DEBUG] allow_upload parameter passed to scan_file: {allow_upload}")
+                console.print(f"[DEBUG] Scanning file {i+1}/{len(file_paths)}: {filename}")
+                console.print(f"[DEBUG] allow_upload parameter passed to scan_file: {allow_upload}")
 
                 result = self.scan_file(file_path, allow_upload=allow_upload)
 
-                console.print(f"🔍 [DEBUG] scan_file returned: {result}")
+                console.print(f"[DEBUG] scan_file returned: {result}")
 
                 if result:
                     if result.get('cached'):
@@ -644,7 +644,7 @@ class VTScanner:
             if result.returncode != 0:
                 error_msg = result.stderr.lower() if result.stderr else ""
                 if 'not found' in error_msg:
-                    console.print(f"🔍 [DEBUG] scan_hash returning 'not_found' status")
+                    console.print(f"[DEBUG] scan_hash returning 'not_found' status")
                     return {'status': 'not_found', 'sha256': sha256}
                 elif 'invalid file hash' in error_msg:
                     console.print(f"[yellow]Invalid hash format: {sha256}[/yellow]")
@@ -794,10 +794,10 @@ class VTScanner:
                 console.print(f"[dim]Stderr: {result.stderr.strip()}[/dim]")
 
             if result.returncode == 0:
-                console.print("[green]✓ Direct vt command works![/green]")
+                console.print("[green]OK: Direct vt command works![/green]")
                 try:
                     data = json.loads(result.stdout)
-                    console.print("[green]✓ JSON response is valid[/green]")
+                    console.print("[green]OK: JSON response is valid[/green]")
 
                     # Show some stats from the response
                     if 'data' in data and 'attributes' in data['data']:
@@ -812,7 +812,7 @@ class VTScanner:
                         console.print(f"[dim]Response: {result.stdout[:200]}...[/dim]")
             else:
                 if 'not found' in (result.stderr or '').lower():
-                    console.print("[yellow]✓ VT CLI works - file not found in database[/yellow]")
+                    console.print("[yellow]OK: VT CLI works - file not found in database[/yellow]")
                     return True
                 else:
                     console.print(f"[red]✗ Direct vt command failed[/red]")
@@ -834,7 +834,7 @@ class VTScanner:
             console.print(f"[dim]Output: {result.stdout.strip()}[/dim]")
 
             if result.returncode == 0:
-                console.print("[green]✓ vt version command works![/green]")
+                console.print("[green]OK: vt version command works![/green]")
                 return True
             else:
                 console.print("[red]✗ vt version command failed[/red]")

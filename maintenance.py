@@ -76,7 +76,7 @@ class DatabaseMaintenance:
                 # Create a checkpoint to ensure clean state
                 self.db.conn.execute('PRAGMA wal_checkpoint(TRUNCATE)')
                 self.db.conn.commit()
-                console.print("[green]✓ Database checkpoint created[/green]")
+                console.print("[green]OK: Database checkpoint created[/green]")
         except Exception as e:
             console.print(f"[yellow]Note: Could not create checkpoint: {e}[/yellow]")
 
@@ -134,7 +134,7 @@ class DatabaseMaintenance:
                 time.sleep(1)  # Reduced sleep time since we're launching multiple
 
                 if process.poll() is None:  # Still running
-                    console.print(f"[green]✓ Successfully launched: {browser}[/green]")
+                    console.print(f"[green]OK: Successfully launched: {browser}[/green]")
                     launched_count += 1
                     processes.append(process)
                 else:
@@ -161,21 +161,21 @@ class DatabaseMaintenance:
                         subprocess.run(["open", str(self.db_path.parent)])
                     elif system == "Linux":
                         subprocess.run(["xdg-open", str(self.db_path.parent)])
-                    console.print("[green]✓ Folder opened[/green]")
+                    console.print("[green]OK: Folder opened[/green]")
                 except Exception as e:
                     console.print(f"[red]Error opening folder: {e}[/red]")
 
         else:
             # Successfully launched browsers
-            console.print(f"\n[green]✓ Launched {launched_count} database browser(s) successfully![/green]")
-            console.print("[yellow]⚠ Note: Avoid making changes from both applications simultaneously[/yellow]")
+            console.print(f"\n[green]OK: Launched {launched_count} database browser(s) successfully![/green]")
+            console.print("[yellow]WARNING: Avoid making changes from both applications simultaneously[/yellow]")
             console.print("[dim]The external browsers will show live data from your security intelligence database[/dim]")
 
         # Re-establish our database connection
         try:
             if self.db and not self.db.conn:
                 self.db.init_db()
-                console.print("[green]✓ Database connection restored[/green]")
+                console.print("[green]OK: Database connection restored[/green]")
         except Exception as e:
             console.print(f"[yellow]Note: Could not restore database connection: {e}[/yellow]")
 

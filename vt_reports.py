@@ -139,7 +139,7 @@ def view_vendor_performance(vt_db: VTDatabase):
             status = "[red]Unreliable[/red]"
 
         # Mark unreliable vendors (those meeting the threshold)
-        unreliable_marker = " [red]⚠️[/red]" if is_unreliable else ""
+        unreliable_marker = " [red](!)[/red]" if is_unreliable else ""
         excluded = " [dim](Excluded)[/dim]" if vendor['vendor_name'] in EXCLUDED_VENDORS else ""
 
         table.add_row(
@@ -156,7 +156,7 @@ def view_vendor_performance(vt_db: VTDatabase):
     # Show unreliable vendors summary
     unreliable = vt_db.get_unreliable_vendors()
     if unreliable:
-        console.print(f"\n[red]⚠️  {len(unreliable)} unreliable vendors detected (>{VT_VENDOR_MAX_FP_RATE:.0%} FP rate with {VT_VENDOR_MIN_DETECTIONS}+ detections)[/red]")
+        console.print(f"\n[red]WARNING: {len(unreliable)} unreliable vendors detected (>{VT_VENDOR_MAX_FP_RATE:.0%} FP rate with {VT_VENDOR_MIN_DETECTIONS}+ detections)[/red]")
         console.print(f"[dim]Unreliable vendors: {', '.join(unreliable[:10])}{' ...' if len(unreliable) > 10 else ''}[/dim]")
 
 

@@ -10,7 +10,7 @@ print(f"Tables: {', '.join(tables)}")
 print(f"\nvt_runs exists: {'vt_runs' in tables}")
 
 if 'vt_runs' not in tables:
-    print("\n⚠ vt_runs table is missing!")
+    print("\nWARNING: vt_runs table is missing!")
     print("Creating vt_runs table now...")
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS vt_runs (
@@ -26,6 +26,6 @@ if 'vt_runs' not in tables:
         )
     ''')
     conn.commit()
-    print("✓ vt_runs table created successfully!")
+    print("OK: vt_runs table created successfully!")
 
 conn.close()

@@ -54,7 +54,7 @@ class IPOperations:
 
         # Display threat status
         if status == 'malicious':
-            console.print("[red bold]⚠ URLhaus Status: MALICIOUS[/red bold]")
+            console.print("[red bold]WARNING: URLhaus Status: MALICIOUS[/red bold]")
             if intel.get('urlhaus_details'):
                 try:
                     details = json.loads(intel['urlhaus_details'])
@@ -70,7 +70,7 @@ class IPOperations:
                 except (json.JSONDecodeError, TypeError):
                     pass
         elif status == 'clean':
-            console.print("[green]✓ URLhaus Status: Clean[/green]")
+            console.print("[green]OK: URLhaus Status: Clean[/green]")
         else:
             console.print(f"[yellow]URLhaus Status: {status}[/yellow]")
 
@@ -132,7 +132,7 @@ class IPOperations:
                         'Action': event.get('action', 'N/A')
                     })
 
-            console.print(f"[green]✓ Results exported to: {csv_path}[/green]")
+            console.print(f"[green]OK: Results exported to: {csv_path}[/green]")
             console.print(f"[dim]Total events exported: {len(events)}[/dim]")
 
         except Exception as e:

@@ -109,7 +109,7 @@ def single_ip_scan(db, threat_intel):
                  datetime.fromisoformat(intel['urlhaus_checked']) <
                  datetime.now() - timedelta(days=URLHAUS_CACHE_DAYS))):
 
-                console.print("[dim]🔍 Checking URLhaus...[/dim]")
+                console.print("[dim]>> Checking URLhaus...[/dim]")
                 urlhaus_data = threat_intel.lookup_urlhaus(ip, threat_intel.urlhaus_key)
                 intel['urlhaus_status'] = urlhaus_data['status']
                 intel['urlhaus_details'] = urlhaus_data['details']
@@ -118,9 +118,9 @@ def single_ip_scan(db, threat_intel):
                 time.sleep(URLHAUS_DELAY)
 
                 if urlhaus_data['status'] == 'malicious':
-                    console.print("[red]⚠ MALICIOUS activity detected by URLhaus[/red]")
+                    console.print("[red]WARNING: MALICIOUS activity detected by URLhaus[/red]")
         else:
-            console.print("[dim]🔍 URLhaus not configured[/dim]")
+            console.print("[dim]>> URLhaus not configured[/dim]")
 
         # 2. ABUSEIPDB ANALYSIS
         if (hasattr(threat_intel, 'abuseipdb_key') and
@@ -133,7 +133,7 @@ def single_ip_scan(db, threat_intel):
                  datetime.fromisoformat(intel['abuseipdb_checked']) <
                  datetime.now() - timedelta(days=ABUSEIPDB_CACHE_DAYS))):
 
-                console.print("[dim]🔍 Checking AbuseIPDB...[/dim]")
+                console.print("[dim]>> Checking AbuseIPDB...[/dim]")
                 abuseipdb_data = threat_intel.lookup_abuseipdb(ip, threat_intel.abuseipdb_key)
 
                 if abuseipdb_data['status'] == 'success':
@@ -143,7 +143,7 @@ def single_ip_scan(db, threat_intel):
                     intel['abuseipdb_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     updates_made = True
 
-                    console.print(f"[green]✓ AbuseIPDB confidence: {abuseipdb_data['confidence_score']}% ({abuseipdb_data['total_reports']} reports)[/green]")
+                    console.print(f"[green]OK: AbuseIPDB confidence: {abuseipdb_data['confidence_score']}% ({abuseipdb_data['total_reports']} reports)[/green]")
 
                     # Also update ISP and country from AbuseIPDB if available
                     if abuseipdb_data.get('isp'):
@@ -155,11 +155,11 @@ def single_ip_scan(db, threat_intel):
                     intel['abuseipdb_confidence_score'] = 0
                     intel['abuseipdb_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     updates_made = True
-                    console.print("[yellow]⚠ AbuseIPDB lookup failed or no data[/yellow]")
+                    console.print("[yellow]WARNING: AbuseIPDB lookup failed or no data[/yellow]")
 
                 time.sleep(ABUSEIPDB_DELAY)
         else:
-            console.print("[dim]🔍 AbuseIPDB not configured[/dim]")
+            console.print("[dim]>> AbuseIPDB not configured[/dim]")
 
         # 3. GEOIP ANALYSIS WITH PRIMARY SOURCE SELECTION
         if (not intel.get('geoip_checked') or
@@ -167,7 +167,7 @@ def single_ip_scan(db, threat_intel):
              datetime.fromisoformat(intel['geoip_checked']) <
              datetime.now() - timedelta(days=GEOIP_CACHE_DAYS))):
 
-            console.print("[dim]🔍 Checking GeoIP with primary source selection...[/dim]")
+            console.print("[dim]>> Checking GeoIP with primary source selection...[/dim]")
 
             # Get AbuseIPDB confidence (if available)
             abuse_confidence = intel.get('abuseipdb_confidence_score', 0)
@@ -179,7 +179,7 @@ def single_ip_scan(db, threat_intel):
             # PRIMARY SOURCE SELECTION LOGIC
             if abuse_confidence > 50 and has_abuse_data:
                 # PRIMARY SOURCE: AbuseIPDB (confidence > 50%)
-                console.print(f"[dim]🎯 Using AbuseIPDB as primary source (confidence: {abuse_confidence}%)[/dim]")
+                console.print(f"[dim]PRIMARY: Using AbuseIPDB as primary source (confidence: {abuse_confidence}%)[/dim]")
                 intel['data_source'] = 'abuseipdb'
 
                 # Country and ISP from AbuseIPDB (already set above), city from GeoIP
@@ -187,7 +187,7 @@ def single_ip_scan(db, threat_intel):
                     intel['city'] = geoip_data.get('city')
             else:
                 # PRIMARY SOURCE: GeoIP (confidence ≤ 50% or no AbuseIPDB data)
-                console.print("[dim]🎯 Using GeoIP as primary source[/dim]")
+                console.print("[dim]PRIMARY: Using GeoIP as primary source[/dim]")
                 intel['data_source'] = 'geoip'
                 intel['country'] = geoip_data.get('country')
                 intel['city'] = geoip_data.get('city')
@@ -209,22 +209,22 @@ def single_ip_scan(db, threat_intel):
                      datetime.fromisoformat(intel['ipqs_checked']) <
                      datetime.now() - timedelta(days=IPQS_CACHE_DAYS))):
 
-                    console.print("[dim]🔍 Checking IPQualityScore...[/dim]")
+                    console.print("[dim]>> Checking IPQualityScore...[/dim]")
                     ipqs_data = threat_intel.lookup_ipqs(ip, threat_intel.ipqs_key)
 
                     if ipqs_data['status'] == 'success':
                         intel['ipqs_fraud_score'] = ipqs_data.get('fraud_score', 0)
                         intel['ipqs_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         updates_made = True
-                        console.print(f"[green]✓ IPQS Fraud Score: {ipqs_data.get('fraud_score', 0)}[/green]")
+                        console.print(f"[green]OK: IPQS Fraud Score: {ipqs_data.get('fraud_score', 0)}[/green]")
                     else:
-                        console.print("[yellow]⚠ IPQS lookup failed or no data[/yellow]")
+                        console.print("[yellow]WARNING: IPQS lookup failed or no data[/yellow]")
 
                     time.sleep(IPQS_DELAY)
             else:
-                console.print("[dim]🔍 IPQS skipped (IP not flagged by URLhaus or AbuseIPDB)[/dim]")
+                console.print("[dim]>> IPQS skipped (IP not flagged by URLhaus or AbuseIPDB)[/dim]")
         else:
-            console.print("[dim]🔍 IPQS not configured[/dim]")
+            console.print("[dim]>> IPQS not configured[/dim]")
 
         # 5. GREYNOISE ANALYSIS
         # Only scan if URLhaus is malicious OR AbuseIPDB confidence > 50
@@ -237,7 +237,7 @@ def single_ip_scan(db, threat_intel):
                  datetime.fromisoformat(intel['greynoise_checked']) <
                  datetime.now() - timedelta(days=GREYNOISE_CACHE_DAYS))):
 
-                console.print("[dim]🔍 Checking GreyNoise...[/dim]")
+                console.print("[dim]>> Checking GreyNoise...[/dim]")
                 greynoise_data = threat_intel.lookup_greynoise(ip)
 
                 if greynoise_data['status'] in ('success', 'not_found'):
@@ -249,22 +249,22 @@ def single_ip_scan(db, threat_intel):
                     updates_made = True
 
                     if greynoise_data['status'] == 'success':
-                        console.print(f"[green]✓ GreyNoise classification: {greynoise_data.get('classification', 'unknown')}[/green]")
+                        console.print(f"[green]OK: GreyNoise classification: {greynoise_data.get('classification', 'unknown')}[/green]")
                     else:
                         console.print("[dim]GreyNoise: IP not seen in their database[/dim]")
                 elif greynoise_data['status'] == 'rate_limit':
-                    console.print("[yellow]⚠ GreyNoise rate limit exceeded (25/week for Community API)[/yellow]")
+                    console.print("[yellow]WARNING: GreyNoise rate limit exceeded (25/week for Community API)[/yellow]")
                     console.print("[dim]Consider upgrading to paid plan for higher limits[/dim]")
                 else:
-                    console.print("[yellow]⚠ GreyNoise lookup failed or no data[/yellow]")
+                    console.print("[yellow]WARNING: GreyNoise lookup failed or no data[/yellow]")
 
                 time.sleep(1.0)
         else:
-            console.print("[dim]🔍 GreyNoise skipped (IP not flagged by URLhaus or AbuseIPDB)[/dim]")
+            console.print("[dim]>> GreyNoise skipped (IP not flagged by URLhaus or AbuseIPDB)[/dim]")
 
         # 6. REVERSE DNS LOOKUP
         if not intel.get('reverse_dns') or intel.get('reverse_dns') == 'N/A':
-            console.print("[dim]🔍 Performing reverse DNS lookup...[/dim]")
+            console.print("[dim]>> Performing reverse DNS lookup...[/dim]")
             intel['reverse_dns'] = threat_intel.reverse_dns(ip)
             intel['dns_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             updates_made = True
@@ -272,13 +272,13 @@ def single_ip_scan(db, threat_intel):
         # UPDATE DATABASE WITH ALL COLLECTED INTELLIGENCE
         if updates_made:
             db.update_ip_intelligence(ip, intel)
-            console.print("[green]✅ All threat intelligence updated in database[/green]")
+            console.print("[green]SUCCESS: All threat intelligence updated in database[/green]")
 
         # DISPLAY COMPREHENSIVE RESULTS
         _display_individual_ip_summary(db, ip)
 
     except Exception as e:
-        console.print(f"[red]❌ Error during IP analysis: {e}[/red]")
+        console.print(f"[red]ERROR: Error during IP analysis: {e}[/red]")
         import traceback
         console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
@@ -519,7 +519,7 @@ def _analyze_ips(db, threat_intel, ips: List[str], scanned_ips: List[str], inter
                             intel['greynoise_checked'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             updates_made = True
                         elif greynoise_data['status'] == 'rate_limit':
-                            console.print(f"\n[yellow]⚠ GreyNoise rate limit exceeded (25/week for Community API)[/yellow]")
+                            console.print(f"\n[yellow]WARNING: GreyNoise rate limit exceeded (25/week for Community API)[/yellow]")
                             break  # Stop scanning to avoid wasting API calls
 
                         time.sleep(1.0) # GreyNoise rate limit is ~1 req/sec
@@ -561,7 +561,7 @@ def _display_quick_scan_summary(db, threat_intel, scanned_ips=None, interactive=
     # total_ips = stats['total_ips']
     malicious_ips = stats['malicious_ips']
 
-    console.print(Panel("📊 Quick Scan Summary", style="cyan"))
+    console.print(Panel("Quick Scan Summary", style="cyan"))
 
     # Get recent malicious IPs for display
     malicious_ips_list = _get_recent_malicious_ips(db)
@@ -596,7 +596,7 @@ def _display_quick_scan_summary(db, threat_intel, scanned_ips=None, interactive=
 
     # Show recent malicious IPs if any
     if malicious_ips_list:
-        console.print("\n[red bold]⚠ Recent Malicious IPs:[/red bold]")
+        console.print("\n[red bold]WARNING: Recent Malicious IPs:[/red bold]")
         threat_table = Table(box=box.SIMPLE, show_header=True, header_style="red")
         threat_table.add_column("IP Address", style="red bold")
         threat_table.add_column("Threat Source", style="white")
@@ -671,7 +671,7 @@ def _display_individual_ip_summary(db, ip: str):
         console.print(f"[yellow]No intelligence data found for {ip}[/yellow]")
         return
 
-    console.print(Panel(f"📊 IP Intelligence: {ip}", style="cyan"))
+    console.print(Panel(f"IP Intelligence: {ip}", style="cyan"))
 
     # Create comprehensive table (same as single IP scan)
     table = Table(box=box.ROUNDED, show_header=True, header_style="bold magenta")
@@ -774,7 +774,7 @@ def _display_individual_ip_summary(db, ip: str):
     if isp != 'N/A':
         geo_details += f" | {isp}"
 
-    source_indicator = "🎯" if data_source == 'abuseipdb' else "📍"
+    source_indicator = "[PRIMARY]" if data_source == 'abuseipdb' else "[GeoIP]"
     geo_style = f"[blue]{source_indicator} {data_source.title()}[/blue]"
 
     table.add_row("Location", geo_style, geo_details)
@@ -814,7 +814,7 @@ def _display_recent_malicious_intelligence(db, malicious_ips_list, interactive=T
         return
 
     console.print("\n" + "="*60)
-    console.print(Panel("🔍 Individual IP Intelligence Details", style="cyan"))
+    console.print(Panel("Individual IP Intelligence Details", style="cyan"))
 
     # Show individual summaries for malicious IPs
     for ip_info in malicious_ips_list[:3]:  # Show details for first 3 malicious IPs
@@ -843,7 +843,7 @@ def _display_newly_scanned_intelligence(db, scanned_ips, interactive=True):
     """
 
     console.print("\n" + "="*60)
-    console.print(Panel("🔄 Newly Scanned IP Intelligence", style="green"))
+    console.print(Panel("Newly Scanned IP Intelligence", style="green"))
     console.print(f"[dim]Showing intelligence for {len(scanned_ips)} IPs scanned in this session[/dim]")
 
     # Show individual summaries for scanned IPs

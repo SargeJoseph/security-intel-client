@@ -785,7 +785,7 @@ class VTDatabase:
                     f.writelines(new_lines)
 
                 excluded_count = len(should_exclude)
-                console.print(f"[green]✓ Updated EXCLUDED_VENDORS list: {excluded_count} vendors excluded[/green]")
+                console.print(f"[green]OK: Updated EXCLUDED_VENDORS list: {excluded_count} vendors excluded[/green]")
                 if excluded_count > 0:
                     console.print(f"[dim]Excluded: {', '.join(sorted(should_exclude))}[/dim]")
 
@@ -863,7 +863,7 @@ class VTDatabase:
             updated_count += 1
 
         self.conn.commit()
-        console.print(f"[green]✓ Re-evaluated {updated_count} file(s) affected by vendor exclusion changes[/green]")
+        console.print(f"[green]OK: Re-evaluated {updated_count} file(s) affected by vendor exclusion changes[/green]")
 
     def get_recent_vt_runs(self, limit: int = 10) -> List[Dict]:
         """Get recent VT scan runs

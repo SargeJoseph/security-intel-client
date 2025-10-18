@@ -247,7 +247,7 @@ class ApplicationBrowser:
         # Display summary statistics
         console.print(f"\n[cyan]Threat Summary:[/cyan]")
         if malicious_count > 0:
-            console.print(f"  [red bold]⚠ {malicious_count} malicious IPs[/red bold]")
-        console.print(f"  [green]✓ {clean_count} clean IPs[/green]")
+            console.print(f"  [red bold]WARNING: {malicious_count} malicious IPs[/red bold]")
+        console.print(f"  [green]OK: {clean_count} clean IPs[/green]")
         if unknown_count > 0:
             console.print(f"  [yellow]? {unknown_count} unknown/not analyzed[/yellow]")

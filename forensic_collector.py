@@ -48,7 +48,7 @@ class ForensicCollector:
         for tool_name, tool_path in tools.items():
             available[tool_name] = tool_path.exists()
             if available[tool_name]:
-                console.print(f"[green]✓ {tool_name} found[/green]")
+                console.print(f"[green]OK: {tool_name} found[/green]")
             else:
                 console.print(f"[yellow]? {tool_name} not found at {tool_path}[/yellow]")
 

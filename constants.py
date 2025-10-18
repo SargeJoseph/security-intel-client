@@ -21,7 +21,6 @@ OUTPUT_DIR = Path(_get_env('OUTPUT') or '.')
 DB_PATH = OUTPUT_DIR / "security_intel.db"
 
 # Excluded vendors (auto-updated based on <70% reliability score)
-# This list is automatically maintained after each VT scan
 EXCLUDED_VENDORS = [
     "APEX",
     "Bkav",

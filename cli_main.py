@@ -91,7 +91,7 @@ class SecurityIntelligenceCLI:
         if check_toml_support():
             self.urlhaus_key = get_urlhaus_api_key()
             if self.urlhaus_key:
-                console.print(f"[green]✓ URLhaus API key loaded from {CONFIG_FILE}[/green]")
+                console.print(f"[green]OK: URLhaus API key loaded from {CONFIG_FILE}[/green]")
                 masked_key = self.urlhaus_key[:8] + "..." + self.urlhaus_key[-4:] if len(self.urlhaus_key) > 12 else "***"
                 console.print(f"[dim]Key: {masked_key}[/dim]")
             else:
@@ -101,7 +101,7 @@ class SecurityIntelligenceCLI:
         if check_toml_support():
             self.abuseipdb_key = get_abuseipdb_api_key()
             if self.abuseipdb_key:
-                console.print(f"[green]✓ AbuseIPDB API key loaded from {CONFIG_FILE}[/green]")
+                console.print(f"[green]OK: AbuseIPDB API key loaded from {CONFIG_FILE}[/green]")
                 masked_key = self.abuseipdb_key[:8] + "..." + self.abuseipdb_key[-4:] if len(self.abuseipdb_key) > 12 else "***"
                 console.print(f"[dim]Key: {masked_key}[/dim]")
 
@@ -110,7 +110,7 @@ class SecurityIntelligenceCLI:
         self.threat_intel.urlhaus_key = self.urlhaus_key
         self.threat_intel.abuseipdb_key = self.abuseipdb_key
         self.threat_intel.ipqs_key = get_ipqs_api_key()
-        console.print(f"[green]✓ Keys assigned to ThreatIntelligence[/green]")
+        console.print(f"[green]OK: Keys assigned to ThreatIntelligence[/green]")
 
     def run(self):
         """Main application loop"""
