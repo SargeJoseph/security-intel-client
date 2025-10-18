@@ -27,6 +27,8 @@ DB_PATH = OUTPUT_DIR / "security_intel.db"
 # Excluded vendors (auto-updated based on <70% reliability score)
 # Excluded vendors (auto-updated based on <70% reliability score)
 # Excluded vendors (auto-updated based on <70% reliability score)
+# Excluded vendors (auto-updated based on <70% reliability score)
+# Excluded vendors (auto-updated based on <70% reliability score)
 EXCLUDED_VENDORS = [
     "APEX",
     "Bkav",

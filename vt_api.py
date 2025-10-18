@@ -596,6 +596,18 @@ class VTScanner:
                 progress.advance(task)
                 time.sleep(VT_SCAN_DELAY)
 
+        # Track this scan run in the database
+        self.vt_db.track_vt_run(
+            scan_type='multiple_from_list',
+            files_processed=results['total'],
+            successfully_scanned=results['scanned'],
+            new_scans=results['scanned'],  # scanned means fresh API calls
+            malicious_count=results['malicious'],
+            clean_count=results['clean'],
+            cached_count=results['cached'],
+            errors_count=results['errors']
+        )
+
         # Update excluded vendors list after scan completes
         try:
             self.vt_db.update_excluded_vendors_list()

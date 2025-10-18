@@ -159,9 +159,12 @@ class VTDatabase:
                 timestamp TIMESTAMP,
                 scan_type TEXT,
                 files_processed INTEGER DEFAULT 0,
+                successfully_scanned INTEGER DEFAULT 0,
                 new_scans INTEGER DEFAULT 0,
                 malicious_count INTEGER DEFAULT 0,
                 clean_count INTEGER DEFAULT 0,
+                cached_count INTEGER DEFAULT 0,
+                errors_count INTEGER DEFAULT 0,
                 excluded_vendors_added TEXT,
                 excluded_vendors_removed TEXT
             )
@@ -216,8 +219,9 @@ class VTDatabase:
 
         self.conn.commit()
 
-    def track_vt_run(self, scan_type: str, files_processed: int = 0, new_scans: int = 0,
-                     malicious_count: int = 0, clean_count: int = 0,
+    def track_vt_run(self, scan_type: str, files_processed: int = 0, successfully_scanned: int = 0,
+                     new_scans: int = 0, malicious_count: int = 0, clean_count: int = 0,
+                     cached_count: int = 0, errors_count: int = 0,
                      excluded_vendors_added: Optional[List[str]] = None,
                      excluded_vendors_removed: Optional[List[str]] = None):
         """Track a VT scan run execution
@@ -225,26 +229,29 @@ class VTDatabase:
         Args:
             scan_type: Type of scan (e.g., 'single_file', 'multiple_from_list', 'file_hash', 'FAC')
             files_processed: Total number of files processed
-            new_scans: Number of new scans performed
+            successfully_scanned: Number of files successfully scanned (fresh API calls)
+            new_scans: Number of new scans performed (non-cached)
             malicious_count: Number of malicious files detected
             clean_count: Number of clean files detected
+            cached_count: Number of results retrieved from cache
+            errors_count: Number of errors encountered
             excluded_vendors_added: List of vendor names added to exclusion list
             excluded_vendors_removed: List of vendor names removed from exclusion list
         """
         cursor = self.conn.cursor()
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        # Convert lists to comma-separated strings for storage
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")        # Convert lists to comma-separated strings for storage
         added_str = ', '.join(excluded_vendors_added) if excluded_vendors_added else None
         removed_str = ', '.join(excluded_vendors_removed) if excluded_vendors_removed else None
 
         cursor.execute('''
             INSERT INTO vt_runs
-            (timestamp, scan_type, files_processed, new_scans, malicious_count,
-             clean_count, excluded_vendors_added, excluded_vendors_removed)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (now, scan_type, files_processed, new_scans, malicious_count,
-              clean_count, added_str, removed_str))
+            (timestamp, scan_type, files_processed, successfully_scanned, new_scans,
+             malicious_count, clean_count, cached_count, errors_count,
+             excluded_vendors_added, excluded_vendors_removed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (now, scan_type, files_processed, successfully_scanned, new_scans,
+              malicious_count, clean_count, cached_count, errors_count,
+              added_str, removed_str))
 
         self.conn.commit()
 

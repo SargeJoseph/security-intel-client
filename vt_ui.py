@@ -118,8 +118,26 @@ def _handle_single_file_scan(scanner: VTScanner):
             console.print(f"  Undetected: {result.get('undetected', 0)}")
             if result.get('cached'):
                 console.print(f"  [yellow]Using cached results[/yellow]")
+
+            # Track the scan
+            scanner.vt_db.track_vt_run(
+                scan_type='single_file',
+                files_processed=1,
+                successfully_scanned=0 if result.get('cached') else 1,
+                new_scans=0 if result.get('cached') else 1,
+                malicious_count=1 if result.get('malicious', 0) > 5 else 0,
+                clean_count=1 if result.get('malicious', 0) <= 5 else 0,
+                cached_count=1 if result.get('cached') else 0,
+                errors_count=0
+            )
         else:
             console.print("[red]Scan failed![/red]")
+            # Track failed scan
+            scanner.vt_db.track_vt_run(
+                scan_type='single_file',
+                files_processed=1,
+                errors_count=1
+            )
     else:
         console.print("[red]File not found![/red]")
 
@@ -150,22 +168,35 @@ def _handle_multiple_files_scan(scanner: VTScanner):
 
 def _handle_hash_scan(scanner: VTScanner):
     """Handle file scanning by hash"""
-    file_hash = Prompt.ask("Enter SHA256 hash to scan")
-    result = scanner.scan_hash(file_hash)
+    sha256 = Prompt.ask("Enter SHA256 hash to scan")
+    result = scanner.scan_hash(sha256)
     if result:
-        if result['status'] == 'not_found':
-            console.print("[yellow]File not found in VirusTotal database[/yellow]")
-        else:
-            console.print(f"\n[green]Scan completed![/green]")
-            console.print(f"  File Name: {result.get('file_name', 'N/A')}")
+        console.print(f"\n[green]Hash scan completed![/green]")
+        console.print(f"  SHA256: {sha256}")
+        console.print(f"  Status: {result.get('status', 'unknown')}")
+        if result.get('status') != 'not_found':
             console.print(f"  Malicious: {result.get('malicious', 0)}")
             console.print(f"  Suspicious: {result.get('suspicious', 0)}")
             console.print(f"  Harmless: {result.get('harmless', 0)}")
             console.print(f"  Undetected: {result.get('undetected', 0)}")
-            if result.get('detecting_vendors'):
-                console.print(f"  Detecting vendors: {', '.join(result['detecting_vendors'][:5])}")
+
+        # Track the scan
+        scanner.vt_db.track_vt_run(
+            scan_type='file_hash',
+            files_processed=1,
+            successfully_scanned=1 if result.get('status') == 'scanned' else 0,
+            malicious_count=1 if result.get('malicious', 0) > 5 else 0,
+            clean_count=1 if result.get('status') == 'scanned' and result.get('malicious', 0) <= 5 else 0,
+            errors_count=0
+        )
     else:
-        console.print("[red]Scan failed![/red]")
+        console.print("[red]Hash scan failed![/red]")
+        # Track failed scan
+        scanner.vt_db.track_vt_run(
+            scan_type='file_hash',
+            files_processed=1,
+            errors_count=1
+        )
 
 
 def _handle_file_upload(scanner: VTScanner):
@@ -186,6 +217,7 @@ def _handle_file_upload(scanner: VTScanner):
 
 def _handle_forensic_collection(scanner: VTScanner):
     """Handle forensic artifact collection"""
+    # Note: forensic_collection_menu handles its own tracking through scan_multiple_files
     forensic_collection_menu(scanner)
 
 
