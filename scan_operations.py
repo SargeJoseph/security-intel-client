@@ -592,7 +592,7 @@ def _display_quick_scan_summary(db, threat_intel, scanned_ips=None, interactive=
 
     # Show individual intelligence for newly scanned IPs
     if scanned_ips:
-        _display_newly_scanned_intelligence(db, scanned_ips)
+        _display_newly_scanned_intelligence(db, scanned_ips, interactive=interactive)
 
     # Show recent malicious IPs if any
     if malicious_ips_list:
