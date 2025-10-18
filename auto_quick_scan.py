@@ -17,6 +17,7 @@ from constants import DB_PATH
 from database import Database
 from threat_intelligence import ThreatIntelligence
 from scan_operations import quick_scan
+from config import get_urlhaus_api_key, get_abuseipdb_api_key, get_ipqs_api_key
 
 console = Console()
 
@@ -37,6 +38,33 @@ def main():
         # Initialize threat intelligence
         console.print("[dim]Initializing threat intelligence modules...[/dim]")
         threat_intel = ThreatIntelligence(db)
+
+        # Load API keys from config
+        console.print("[dim]Loading API keys from configuration...[/dim]")
+        urlhaus_key = get_urlhaus_api_key()
+        abuseipdb_key = get_abuseipdb_api_key()
+        ipqs_key = get_ipqs_api_key()
+
+        # Assign keys to ThreatIntelligence instance
+        threat_intel.urlhaus_key = urlhaus_key
+        threat_intel.abuseipdb_key = abuseipdb_key
+        threat_intel.ipqs_key = ipqs_key
+
+        # Log key status (masked for security)
+        if urlhaus_key:
+            console.print("[green]✓ URLhaus API key loaded[/green]")
+        else:
+            console.print("[yellow]⚠ URLhaus API key not found[/yellow]")
+
+        if abuseipdb_key:
+            console.print("[green]✓ AbuseIPDB API key loaded[/green]")
+        else:
+            console.print("[yellow]⚠ AbuseIPDB API key not found[/yellow]")
+
+        if ipqs_key:
+            console.print("[green]✓ IPQualityScore API key loaded[/green]")
+        else:
+            console.print("[dim]IPQualityScore API key not configured[/dim]")
 
         # Run quick scan (non-interactive mode)
         console.print("[green]Starting quick scan (autonomous mode)...[/green]\n")
