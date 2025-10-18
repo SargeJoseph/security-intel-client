@@ -19,7 +19,8 @@ from threat_intelligence import ThreatIntelligence
 from scan_operations import quick_scan
 from config import get_urlhaus_api_key, get_abuseipdb_api_key, get_ipqs_api_key
 
-console = Console()
+# Use safe ASCII output for logging/redirection compatibility
+console = Console(legacy_windows=False, force_terminal=False)
 
 
 def main():
@@ -52,21 +53,19 @@ def main():
 
         # Log key status (masked for security)
         if urlhaus_key:
-            console.print("[green]✓ URLhaus API key loaded[/green]")
+            console.print("[green]OK: URLhaus API key loaded[/green]")
         else:
-            console.print("[yellow]⚠ URLhaus API key not found[/yellow]")
+            console.print("[yellow]WARNING: URLhaus API key not found[/yellow]")
 
         if abuseipdb_key:
-            console.print("[green]✓ AbuseIPDB API key loaded[/green]")
+            console.print("[green]OK: AbuseIPDB API key loaded[/green]")
         else:
-            console.print("[yellow]⚠ AbuseIPDB API key not found[/yellow]")
+            console.print("[yellow]WARNING: AbuseIPDB API key not found[/yellow]")
 
         if ipqs_key:
-            console.print("[green]✓ IPQualityScore API key loaded[/green]")
+            console.print("[green]OK: IPQualityScore API key loaded[/green]")
         else:
-            console.print("[dim]IPQualityScore API key not configured[/dim]")
-
-        # Run quick scan (non-interactive mode)
+            console.print("[dim]IPQualityScore API key not configured[/dim]")        # Run quick scan (non-interactive mode)
         console.print("[green]Starting quick scan (autonomous mode)...[/green]\n")
         quick_scan(db, threat_intel, interactive=False)
 
@@ -75,7 +74,7 @@ def main():
         duration = (end_time - start_time).total_seconds()
 
         console.print("\n" + "="*60)
-        console.print(f"[green]✓ Quick scan completed successfully![/green]")
+        console.print(f"[green]SUCCESS: Quick scan completed successfully![/green]")
         console.print(f"[dim]Duration: {duration:.1f} seconds[/dim]")
         console.print(f"[dim]Finished at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}[/dim]")
         console.print("="*60 + "\n")

@@ -18,12 +18,15 @@ $startTime = Get-Date
 "=" * 80 | Out-File -FilePath $logFile -Append
 
 try {
+  # Set UTF-8 encoding for Python output
+  $env:PYTHONIOENCODING = "utf-8"
+
   # Run Python script and capture all output
-  # Use 'echo n' to answer 'n' to any prompts
-  $output = echo n | python "$pythonScript" 2>&1
+  # No prompts in autonomous mode (interactive=False)
+  $output = python "$pythonScript" 2>&1
 
   # Log output
-  $output | Out-File -FilePath $logFile -Append
+  $output | Out-File -FilePath $logFile -Encoding UTF8 -Append
 
   # Log completion
   $endTime = Get-Date
