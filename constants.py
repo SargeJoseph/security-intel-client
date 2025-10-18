@@ -22,13 +22,6 @@ DB_PATH = OUTPUT_DIR / "security_intel.db"
 
 # Excluded vendors (auto-updated based on <70% reliability score)
 # This list is automatically maintained after each VT scan
-# Vendors with reliability_score < 0.70 and >= 10 detections are excluded
-# Excluded vendors (auto-updated based on <70% reliability score)
-# Excluded vendors (auto-updated based on <70% reliability score)
-# Excluded vendors (auto-updated based on <70% reliability score)
-# Excluded vendors (auto-updated based on <70% reliability score)
-# Excluded vendors (auto-updated based on <70% reliability score)
-# Excluded vendors (auto-updated based on <70% reliability score)
 EXCLUDED_VENDORS = [
     "APEX",
     "Bkav",

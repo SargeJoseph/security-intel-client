@@ -739,14 +739,20 @@ class VTDatabase:
         in_excluded_vendors = False
         updated = False
 
+        skip_next_comments = False
         for i, line in enumerate(lines):
+            # Skip any comment lines right before EXCLUDED_VENDORS
+            if line.strip().startswith('#') and i + 1 < len(lines) and lines[i + 1].strip().startswith('EXCLUDED_VENDORS = ['):
+                skip_next_comments = True
+                continue
+
             if line.strip().startswith('EXCLUDED_VENDORS = ['):
                 # Start of EXCLUDED_VENDORS list
                 in_excluded_vendors = True
                 updated = True
+                skip_next_comments = False
 
-                # Write new list with simple comment (details are in vt_runs table)
-                new_lines.append('# Excluded vendors (auto-updated based on <70% reliability score)\n')
+                # Write new list without comment (tracking is in vt_runs table)
                 new_lines.append('EXCLUDED_VENDORS = [\n')
 
                 if should_exclude:
@@ -765,7 +771,11 @@ class VTDatabase:
                 if ']' in line:
                     in_excluded_vendors = False
                 continue
+            elif skip_next_comments and line.strip().startswith('#'):
+                # Skip old comment lines
+                continue
             else:
+                skip_next_comments = False
                 new_lines.append(line)
 
         # Write updated constants.py
