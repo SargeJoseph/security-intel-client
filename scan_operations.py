@@ -304,13 +304,14 @@ def read_applications_from_db(db) -> List[Dict]:
     return [dict(row) for row in cursor.fetchall()]
 
 
-def quick_scan(db, threat_intel):
+def quick_scan(db, threat_intel, interactive=True):
     """
     Scan only new/uncached IPs using database source
 
     Args:
         db: Database instance
         threat_intel: ThreatIntelligence instance
+        interactive: If False, skip all user prompts (default: True)
     """
     # Track IPs scanned in this session
     scanned_ips = []
@@ -342,15 +343,16 @@ def quick_scan(db, threat_intel):
     if error_ips:
         console.print(f"[yellow]Found {len(error_ips)} IPs with errors to retry[/yellow]")
 
-    _analyze_ips(db, threat_intel, to_scan, scanned_ips)
+    _analyze_ips(db, threat_intel, to_scan, scanned_ips, interactive=interactive)
 
-def full_scan(db, threat_intel):
+def full_scan(db, threat_intel, interactive=True):
     """
     Re-analyze all IPs with stale data
 
     Args:
         db: Database instance
         threat_intel: ThreatIntelligence instance
+        interactive: If False, skip all user prompts (default: True)
     """
     # Track IPs scanned in this session
     scanned_ips = []
@@ -368,9 +370,9 @@ def full_scan(db, threat_intel):
 
     console.print(f"[yellow]Analyzing {len(to_scan)} IPs[/yellow]")
 
-    _analyze_ips(db, threat_intel, to_scan, scanned_ips)
+    _analyze_ips(db, threat_intel, to_scan, scanned_ips, interactive=interactive)
 
-def _analyze_ips(db, threat_intel, ips: List[str], scanned_ips: List[str]):
+def _analyze_ips(db, threat_intel, ips: List[str], scanned_ips: List[str], interactive=True):
     """
     Analyze list of IPs with progress bar
 
@@ -379,6 +381,7 @@ def _analyze_ips(db, threat_intel, ips: List[str], scanned_ips: List[str]):
         threat_intel: ThreatIntelligence instance
         ips: List of IP addresses to analyze
         scanned_ips: List to track scanned IPs in this session
+        interactive: If False, skip all user prompts (default: True)
     """
     with Progress(
         SpinnerColumn(),
@@ -539,12 +542,18 @@ def _analyze_ips(db, threat_intel, ips: List[str], scanned_ips: List[str]):
     console.print("[green]Analysis complete![/green]")
 
     # Display comprehensive summary
-    _display_quick_scan_summary(db, threat_intel, scanned_ips)
+    _display_quick_scan_summary(db, threat_intel, scanned_ips, interactive=interactive)
 
 
-def _display_quick_scan_summary(db, threat_intel, scanned_ips=None):
+def _display_quick_scan_summary(db, threat_intel, scanned_ips=None, interactive=True):
     """
     Display comprehensive summary of quick scan results
+
+    Args:
+        db: Database instance
+        threat_intel: ThreatIntelligence instance
+        scanned_ips: List of IPs scanned in this session
+        interactive: If False, skip all user prompts (default: True)
     """
 
     # Get stats from database
@@ -608,7 +617,7 @@ def _display_quick_scan_summary(db, threat_intel, scanned_ips=None):
             console.print(f"[dim]... and {len(malicious_ips_list) - 5} more malicious IPs[/dim]")
 
     # Show individual intelligence for recently scanned malicious IPs
-    _display_recent_malicious_intelligence(db, malicious_ips_list)
+    _display_recent_malicious_intelligence(db, malicious_ips_list, interactive=interactive)
 
 
 def _get_recent_malicious_ips(db, limit: int = 10):
@@ -791,9 +800,14 @@ def _display_individual_ip_summary(db, ip: str):
 
 
 
-def _display_recent_malicious_intelligence(db, malicious_ips_list):
+def _display_recent_malicious_intelligence(db, malicious_ips_list, interactive=True):
     """
     Display comprehensive intelligence for recently scanned malicious IPs
+
+    Args:
+        db: Database instance
+        malicious_ips_list: List of malicious IPs to display
+        interactive: If False, skip user prompts (default: True)
     """
 
     if not malicious_ips_list:
@@ -810,7 +824,7 @@ def _display_recent_malicious_intelligence(db, malicious_ips_list):
 
     # Ask if user wants to see more
     if len(malicious_ips_list) > 3:
-        if Confirm.ask(f"Show details for remaining {len(malicious_ips_list) - 3} malicious IPs?"):
+        if interactive and Confirm.ask(f"Show details for remaining {len(malicious_ips_list) - 3} malicious IPs?"):
             for ip_info in malicious_ips_list[3:]:
                 ip_address = ip_info['ip_address']
                 console.print(f"\n[bold]Detailed analysis for: {ip_address}[/bold]")
@@ -818,9 +832,14 @@ def _display_recent_malicious_intelligence(db, malicious_ips_list):
 
 
 
-def _display_newly_scanned_intelligence(db, scanned_ips):
+def _display_newly_scanned_intelligence(db, scanned_ips, interactive=True):
     """
     Display comprehensive intelligence for IPs scanned in this session
+
+    Args:
+        db: Database instance
+        scanned_ips: List of IPs scanned in this session
+        interactive: If False, skip user prompts (default: True)
     """
 
     console.print("\n" + "="*60)
@@ -837,7 +856,7 @@ def _display_newly_scanned_intelligence(db, scanned_ips):
     # Ask if user wants to see more
     if len(scanned_ips) > display_count:
         remaining = len(scanned_ips) - display_count
-        if Confirm.ask(f"Show details for remaining {remaining} scanned IPs?"):
+        if interactive and Confirm.ask(f"Show details for remaining {remaining} scanned IPs?"):
             for i, ip_address in enumerate(scanned_ips[display_count:], display_count + 1):
                 console.print(f"\n[bold]{i}/{len(scanned_ips)}: Detailed analysis for {ip_address}[/bold]")
                 _display_individual_ip_summary(db, ip_address)

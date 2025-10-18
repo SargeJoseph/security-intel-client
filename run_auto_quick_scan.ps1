@@ -1,0 +1,44 @@
+# Autonomous Quick Scan - Task Scheduler Wrapper
+# Runs the Python quick scan script non-interactively
+
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+$pythonScript = Join-Path $scriptPath "auto_quick_scan.py"
+$logFile = Join-Path $scriptPath "Output\auto_quick_scan_log.txt"
+
+# Ensure Output directory exists
+$outputDir = Join-Path $scriptPath "Output"
+if (-not (Test-Path $outputDir)) {
+  New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+}
+
+# Log start time
+$startTime = Get-Date
+"=" * 80 | Out-File -FilePath $logFile -Append
+"AUTONOMOUS QUICK SCAN - Started at $($startTime.ToString('yyyy-MM-dd HH:mm:ss'))" | Out-File -FilePath $logFile -Append
+"=" * 80 | Out-File -FilePath $logFile -Append
+
+try {
+  # Run Python script and capture all output
+  # Use 'echo n' to answer 'n' to any prompts
+  $output = echo n | python "$pythonScript" 2>&1
+
+  # Log output
+  $output | Out-File -FilePath $logFile -Append
+
+  # Log completion
+  $endTime = Get-Date
+  $duration = ($endTime - $startTime).TotalSeconds
+  "`n" + "=" * 80 | Out-File -FilePath $logFile -Append
+  "Quick scan completed - Exit code: $LASTEXITCODE" | Out-File -FilePath $logFile -Append
+  "Duration: $([math]::Round($duration, 1)) seconds" | Out-File -FilePath $logFile -Append
+  "Finished at $($endTime.ToString('yyyy-MM-dd HH:mm:ss'))" | Out-File -FilePath $logFile -Append
+  "=" * 80 | Out-File -FilePath $logFile -Append
+  "`n" | Out-File -FilePath $logFile -Append
+
+  exit $LASTEXITCODE
+
+} catch {
+  $errorMsg = $_.Exception.Message
+  "`nFATAL ERROR: $errorMsg" | Out-File -FilePath $logFile -Append
+  exit 1
+}
